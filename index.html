@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>More Than Just a Mrs. — A Community for Women in Korea</title>
+  <meta name="description" content="A Seoul-based community for women who came to Korea through marriage — a space to share stories, connect, and be seen as more than a role." />
+  <meta property="og:title" content="More Than Just a Mrs." />
+  <meta property="og:description" content="A community for women building lives in Korea — seen, heard, and valued beyond their role in a family." />
+  <meta property="og:image" content="TODO: add a 1200x630 share image once one exists" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='24' font-size='24'%3E%F0%9F%8C%B8%3C/text%3E%3C/svg%3E" />
+
+  <!-- Tailwind CSS (CDN — no build step) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            canvas: '#FBF3EC',
+            ink:    '#2B211C',
+            muted:  '#6E6259',
+            accent: '#C9694F',
+            sand:   '#E9DFC8',
+            sage:   '#E7E9D9',
+            panel:  '#FFFFFF',
+            moss:   '#333F29',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            serif: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    body { font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity .7s ease, transform .7s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+
+    /* ---- Portal / iris-reveal mechanics ---- */
+    .portal-wrap { position: relative; }
+    .portal-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+
+    /* cherry blossom sunset portal: the bridge/forest scene fills the screen,
+       and a hole grows outward from the sun in the image — not the viewport
+       center — like walking toward the light through the blossoms */
+    .blossom-cover {
+      position: absolute; inset: 0; overflow: hidden;
+      -webkit-mask-image: radial-gradient(circle at 77% 48%, transparent var(--hole, 0px), #000 calc(var(--hole, 0px) + 46px));
+      mask-image: radial-gradient(circle at 77% 48%, transparent var(--hole, 0px), #000 calc(var(--hole, 0px) + 46px));
+      will-change: -webkit-mask-image, mask-image;
+      background: #f3cfa6;
+    }
+    .blossom-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 77% 48%; }
+    #blossomWrap, #petals { position: absolute; inset: 0; }
+
+    @keyframes petal-drift {
+      0%   { transform: translate(0, 0) rotate(var(--baseRot, 0deg)); }
+      50%  { transform: translate(-14px, 20px) rotate(calc(var(--baseRot, 0deg) + 160deg)); }
+      100% { transform: translate(10px, 40px) rotate(calc(var(--baseRot, 0deg) + 320deg)); }
+    }
+    .petal {
+      position: absolute;
+      background-image: var(--sprite, url(/assets/petal-flower.png));
+      background-size: contain;
+      background-repeat: no-repeat;
+      animation: petal-drift 7s ease-in-out infinite alternate;
+      opacity: calc(0.9 - var(--openP, 0));
+    }
+
+    .zoomable { transform: scale(var(--zoom, 1)); transition: transform .05s linear; }
+
+    .tilt-card {
+      transform: rotate(var(--r, 0deg)) translateX(calc(var(--exitX, 0%) * var(--exitP, 0))) translateY(calc(var(--exitY, 0%) * var(--exitP, 0))) scale(calc(1 + 0.2 * var(--exitP, 0)));
+      opacity: calc(1 - var(--exitP, 0));
+    }
+    #heroText { transition: none; }
+
+    /* the next section sits behind the hero in 3D space and zooms forward into
+       view as you keep scrolling, instead of sliding up from below */
+    .depth-stage { perspective: 1400px; }
+    .depth-next {
+      transform: translateZ(var(--z, -700px));
+      opacity: var(--op, 0);
+      pointer-events: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { transition: none; opacity: 1; transform: none; }
+      .portal-wrap { height: auto !important; }
+      .portal-sticky { position: static !important; height: auto !important; }
+      .blossom-cover, .petal { display: none !important; }
+      .zoomable { transform: none !important; }
+      .tilt-card { transform: rotate(var(--r, 0deg)) !important; opacity: 1 !important; }
+      #heroText { opacity: 1 !important; transform: none !important; }
+      .depth-next { position: static !important; transform: none !important; opacity: 1 !important; padding: 4rem 0; }
+    }
+
+    body { word-break: normal; }
+  </style>
+</head>
+<body class="bg-canvas text-ink antialiased">
+
+  <!-- ══════════════ NAV ══════════════ -->
+  <header class="fixed top-0 inset-x-0 z-[100] backdrop-blur bg-canvas/70 border-b border-ink/5">
+    <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between text-sm">
+      <a href="#top" class="font-serif text-lg tracking-tight">More Than Just a Mrs.</a>
+      <nav class="hidden md:flex items-center gap-8 text-ink/80">
+        <a href="#about" class="hover:text-accent transition">Who We Are</a>
+        <a href="#vision" class="hover:text-accent transition">Vision &amp; Mission</a>
+        <a href="#programs" class="hover:text-accent transition">Programs</a>
+      </nav>
+      <a href="#join" class="rounded-full bg-accent text-canvas font-semibold px-5 py-2 hover:brightness-110 transition">Join Us</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- ══════════════ INTRO: bushes open → hero → next section zooms forward from behind ══════════════ -->
+    <section id="introWrap" class="portal-wrap" style="height:400vh">
+      <div class="portal-sticky depth-stage">
+        <div id="top" class="relative h-full flex items-center px-5 pt-16">
+          <div class="max-w-6xl mx-auto w-full grid md:grid-cols-2 gap-10 items-center zoomable" id="heroZoom">
+            <div id="heroText">
+              <p class="text-accent text-sm tracking-[0.2em] uppercase font-semibold mb-4">A community for women in Korea</p>
+              <h1 class="font-serif text-4xl sm:text-5xl md:text-6xl leading-[1.05] mb-6">
+                More Than<br />
+                <span class="text-accent italic">Just a Mrs.</span>
+              </h1>
+              <p class="text-lg text-muted max-w-md mb-8">
+                A Seoul-based community for women who came to Korea through marriage — building
+                lives between cultures, languages, and expectations, one story at a time.
+              </p>
+              <div class="flex flex-wrap items-center gap-4">
+                <a href="#join" class="rounded-full bg-accent text-canvas font-semibold px-7 py-3 hover:brightness-110 transition">Join Our Circle</a>
+                <a href="#about" class="text-ink/80 font-semibold hover:text-accent transition">Learn our story ↓</a>
+              </div>
+            </div>
+
+            <!-- floating tilted card stack — cards fly out to the sides as you keep scrolling -->
+            <div class="relative hidden md:block h-80">
+              <div class="tilt-card absolute top-2 left-4 w-56 rounded-2xl bg-sand p-5 shadow-lg" style="--r:-6deg; --exitX:-160%; --exitY:-15%">
+                <p class="font-serif text-xl mb-1">Seoul-Based</p>
+                <p class="text-sm text-ink/70">A home for women building new lives in Korea.</p>
+              </div>
+              <div class="tilt-card absolute top-24 left-40 w-56 rounded-2xl bg-sage p-5 shadow-lg" style="--r:4deg; --exitX:150%; --exitY:-10%">
+                <p class="font-serif text-xl mb-1">Story Circles</p>
+                <p class="text-sm text-ink/70">Small groups. Real conversations. No judgment.</p>
+              </div>
+              <div class="tilt-card absolute top-48 left-8 w-56 rounded-2xl bg-panel border border-ink/10 p-5 shadow-lg" style="--r:-3deg; --exitX:-130%; --exitY:35%">
+                <p class="font-serif text-xl mb-1">Every Voice Heard</p>
+                <p class="text-sm text-ink/70">We listen — we don't speak for you.</p>
+              </div>
+            </div>
+
+            <!-- mobile card stack (no absolute positioning, no exit animation) -->
+            <div class="grid grid-cols-1 gap-4 md:hidden">
+              <div class="rounded-2xl bg-sand p-5">
+                <p class="font-serif text-lg mb-1">Seoul-Based</p>
+                <p class="text-sm text-ink/70">A home for women building new lives in Korea.</p>
+              </div>
+              <div class="rounded-2xl bg-sage p-5">
+                <p class="font-serif text-lg mb-1">Story Circles</p>
+                <p class="text-sm text-ink/70">Small groups. Real conversations. No judgment.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- "Who We Are" sits behind the hero and zooms forward into view as you scroll past the cards -->
+        <div id="depthNext" class="depth-next absolute inset-0 flex items-center justify-center px-5 bg-canvas" aria-hidden="true">
+          <div class="text-center max-w-2xl">
+            <p class="text-accent text-sm tracking-[0.2em] uppercase font-semibold mb-4">Who We Are</p>
+            <p class="font-serif text-2xl md:text-4xl leading-snug">
+              Behind every "multicultural family" is a woman with her own story.
+            </p>
+          </div>
+        </div>
+
+        <div id="blossomWrap" class="pointer-events-none" aria-hidden="true">
+          <div id="blossomCover" class="blossom-cover">
+            <img src="/assets/blossom-bridge-forest.webp" alt="" />
+          </div>
+          <div id="petals">
+            <span class="petal" style="top:10%; left:15%; width:20px; height:19px; --baseRot:15deg; animation-duration:6.5s; animation-delay:0s"></span>
+            <span class="petal" style="top:22%; left:78%; width:30px; height:20px; --sprite:url(/assets/petal-single.png); --baseRot:-40deg; animation-duration:7.5s; animation-delay:.6s"></span>
+            <span class="petal" style="top:35%; left:8%; width:16px; height:15px; --baseRot:80deg; animation-duration:6s; animation-delay:1.2s"></span>
+            <span class="petal" style="top:15%; left:52%; width:24px; height:16px; --sprite:url(/assets/petal-single.png); --baseRot:200deg; animation-duration:8s; animation-delay:.3s"></span>
+            <span class="petal" style="top:60%; left:88%; width:18px; height:17px; --baseRot:-25deg; animation-duration:6.8s; animation-delay:1.5s"></span>
+            <span class="petal" style="top:72%; left:20%; width:28px; height:27px; --baseRot:120deg; animation-duration:7s; animation-delay:.9s"></span>
+            <span class="petal" style="top:85%; left:65%; width:20px; height:13px; --sprite:url(/assets/petal-single.png); --baseRot:50deg; animation-duration:7.2s; animation-delay:.2s"></span>
+            <span class="petal" style="top:48%; left:40%; width:22px; height:21px; --baseRot:-70deg; animation-duration:6.4s; animation-delay:1.8s"></span>
+            <span class="petal" style="top:5%; left:35%; width:26px; height:17px; --sprite:url(/assets/petal-single.png); --baseRot:100deg; animation-duration:7.8s; animation-delay:1.1s"></span>
+            <span class="petal" style="top:28%; left:64%; width:16px; height:15px; --baseRot:-10deg; animation-duration:6.2s; animation-delay:.5s"></span>
+            <span class="petal" style="top:44%; left:92%; width:22px; height:15px; --sprite:url(/assets/petal-single.png); --baseRot:160deg; animation-duration:7.4s; animation-delay:1.7s"></span>
+            <span class="petal" style="top:64%; left:44%; width:18px; height:17px; --baseRot:60deg; animation-duration:6.6s; animation-delay:.8s"></span>
+            <span class="petal" style="top:90%; left:28%; width:24px; height:16px; --sprite:url(/assets/petal-single.png); --baseRot:-100deg; animation-duration:8.2s; animation-delay:.4s"></span>
+            <span class="petal" style="top:16%; left:24%; width:14px; height:13px; --baseRot:30deg; animation-duration:5.8s; animation-delay:1.4s"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════ WHO WE ARE ══════════════ -->
+    <section id="about" class="max-w-3xl mx-auto px-5 py-20 md:py-28">
+      <div class="reveal space-y-5 text-lg text-ink/80">
+        <p>
+          More Than Just a Mrs. is a community for women who came to Korea through marriage and
+          are learning to navigate life between cultures, languages, relationships, and family
+          expectations.
+        </p>
+        <p>
+          We believe every woman deserves to be seen as more than her role in a family — with her
+          own experiences, challenges, dreams, and identity.
+        </p>
+        <p>
+          Based in Seoul, we're building genuine connections among women shaping their lives in
+          Korea, in a space where they can be understood without judgment.
+        </p>
+        <p class="font-serif text-2xl text-ink italic pt-4">
+          "We are here to listen to women — not to speak for them. Every voice, every story,
+          every choice is her own."
+        </p>
+      </div>
+    </section>
+
+    <!-- ══════════════ VISION & MISSION ══════════════ -->
+    <section id="vision" class="max-w-6xl mx-auto px-5 py-20 md:py-28">
+      <div class="reveal grid md:grid-cols-2 gap-12">
+        <div>
+          <p class="text-accent text-sm tracking-[0.2em] uppercase font-semibold mb-4">Our Vision</p>
+          <p class="font-serif text-2xl md:text-3xl leading-snug">
+            A community where women who came to Korea through marriage are seen, heard, valued,
+            and recognized as individuals — not only through their role in a family.
+          </p>
+        </div>
+        <div>
+          <p class="text-accent text-sm tracking-[0.2em] uppercase font-semibold mb-4">Our Mission</p>
+          <p class="text-ink/70 mb-6">We create a safe, welcoming space where women can:</p>
+          <ul class="space-y-4">
+            <li class="flex gap-3"><span class="text-accent font-serif text-xl">01</span><span><span class="font-semibold">Share their stories</span> — speak openly about their experiences and perspectives.</span></li>
+            <li class="flex gap-3"><span class="text-accent font-serif text-xl">02</span><span><span class="font-semibold">Connect with others</span> — build relationships with women who understand.</span></li>
+            <li class="flex gap-3"><span class="text-accent font-serif text-xl">03</span><span><span class="font-semibold">Have honest conversations</span> — about culture, language, family, identity, and life in Korea.</span></li>
+            <li class="flex gap-3"><span class="text-accent font-serif text-xl">04</span><span><span class="font-semibold">Build community</span> — connections that go beyond the "multicultural family" label.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════ PROGRAMS ══════════════ -->
+    <section id="programs" class="max-w-6xl mx-auto px-5 py-20 md:py-28">
+      <div class="reveal mb-14 max-w-2xl">
+        <p class="text-accent text-sm tracking-[0.2em] uppercase font-semibold mb-4">Programs</p>
+        <h2 class="font-serif text-3xl md:text-5xl">Ways to take part</h2>
+      </div>
+      <div class="reveal grid md:grid-cols-3 gap-6">
+        <div class="rounded-2xl bg-sand p-7 hover:-translate-y-1 transition">
+          <p class="font-serif text-xs uppercase tracking-widest text-accent mb-3">Flagship</p>
+          <h3 class="font-serif text-2xl mb-3">Story Circles</h3>
+          <p class="text-ink/70 text-sm leading-relaxed">
+            Small groups of 6-8 women meeting in person or online to share their experiences in a
+            structured, judgment-free space. Themes rotate monthly — arriving in Korea, in-law
+            dynamics, raising bicultural kids, identity and language.
+          </p>
+        </div>
+        <div class="rounded-2xl bg-sage p-7 hover:-translate-y-1 transition">
+          <p class="font-serif text-xs uppercase tracking-widest text-accent mb-3">Practical</p>
+          <h3 class="font-serif text-2xl mb-3">Language &amp; Life Workshops</h3>
+          <p class="text-ink/70 text-sm leading-relaxed">
+            Beyond Korean class referrals — hands-on sessions on hospital visits, school
+            enrollment, banking, visa renewals, and in-law customs, alongside local volunteers and
+            multicultural family support centers.
+          </p>
+        </div>
+        <div class="rounded-2xl bg-panel border border-ink/10 p-7 hover:-translate-y-1 transition">
+          <p class="font-serif text-xs uppercase tracking-widest text-accent mb-3">Just for Fun</p>
+          <h3 class="font-serif text-2xl mb-3">"Just Us" Meetups</h3>
+          <p class="text-ink/70 text-sm leading-relaxed">
+            No agenda, just good company. Low-stakes gatherings that keep the community feeling
+            alive between the deeper conversations — an easy first step for new or shy members.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════ CTA / JOIN ══════════════ -->
+    <section id="join" class="relative px-5 py-20 md:py-28 text-canvas overflow-hidden bg-[#1b2417]">
+      <svg class="absolute inset-0 w-full h-full" viewBox="0 0 1200 500" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+        <defs>
+          <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#1b2417"/>
+            <stop offset="55%" stop-color="#2e3d22"/>
+            <stop offset="100%" stop-color="#5a6a3c"/>
+          </linearGradient>
+        </defs>
+        <rect x="0" y="0" width="1200" height="500" fill="url(#skyGrad)"/>
+
+        <!-- back skyline -->
+        <polygon points="0,420 80,390 150,410 230,380 300,405 380,370 460,400 540,385 620,410 700,390 780,415 860,395 940,415 1020,390 1100,410 1200,395 1200,500 0,500" fill="#435A34" opacity="0.55"/>
+
+        <!-- mid buildings -->
+        <g fill="#2E4022">
+          <rect x="40" y="330" width="60" height="120"/>
+          <rect x="120" y="300" width="45" height="150"/>
+          <rect x="190" y="345" width="70" height="105"/>
+          <rect x="290" y="310" width="50" height="140"/>
+          <rect x="640" y="320" width="55" height="130"/>
+          <rect x="720" y="290" width="45" height="160"/>
+          <rect x="790" y="335" width="65" height="115"/>
+          <rect x="880" y="300" width="50" height="150"/>
+          <rect x="960" y="340" width="70" height="110"/>
+          <rect x="1060" y="310" width="55" height="140"/>
+          <rect x="1140" y="345" width="60" height="105"/>
+        </g>
+
+        <!-- Namsan hill -->
+        <ellipse cx="480" cy="452" rx="220" ry="60" fill="#233318"/>
+
+        <!-- front buildings -->
+        <g fill="#1B2712">
+          <rect x="60" y="380" width="50" height="70"/>
+          <rect x="150" y="360" width="40" height="90"/>
+          <rect x="230" y="400" width="60" height="50"/>
+          <rect x="700" y="370" width="45" height="80"/>
+          <rect x="800" y="390" width="55" height="60"/>
+          <rect x="900" y="365" width="40" height="85"/>
+          <rect x="1000" y="395" width="60" height="55"/>
+          <rect x="1100" y="375" width="50" height="75"/>
+        </g>
+
+        <!-- Namsan Tower -->
+        <g fill="#1B2712">
+          <polygon points="470,452 486,180 494,180 510,452"/>
+          <ellipse cx="490" cy="200" rx="22" ry="14"/>
+          <rect x="487" y="120" width="6" height="62"/>
+        </g>
+        <circle cx="490" cy="115" r="5" fill="#EADFB4"/>
+
+        <!-- city lights -->
+        <g fill="#EADFB4">
+          <circle cx="65" cy="410" r="2.4" opacity="0.9"/>
+          <circle cx="80" cy="430" r="2" opacity="0.6"/>
+          <circle cx="135" cy="330" r="2.2" opacity="0.8"/>
+          <circle cx="150" cy="400" r="2" opacity="0.7"/>
+          <circle cx="205" cy="370" r="2.4" opacity="0.9"/>
+          <circle cx="245" cy="420" r="2" opacity="0.6"/>
+          <circle cx="305" cy="340" r="2.2" opacity="0.85"/>
+          <circle cx="660" cy="350" r="2.2" opacity="0.8"/>
+          <circle cx="715" cy="320" r="2" opacity="0.7"/>
+          <circle cx="735" cy="400" r="2.4" opacity="0.9"/>
+          <circle cx="805" cy="360" r="2" opacity="0.6"/>
+          <circle cx="825" cy="410" r="2.2" opacity="0.85"/>
+          <circle cx="895" cy="330" r="2" opacity="0.7"/>
+          <circle cx="915" cy="400" r="2.4" opacity="0.9"/>
+          <circle cx="975" cy="365" r="2" opacity="0.6"/>
+          <circle cx="1000" cy="415" r="2.2" opacity="0.8"/>
+          <circle cx="1075" cy="335" r="2" opacity="0.7"/>
+          <circle cx="1110" cy="400" r="2.4" opacity="0.9"/>
+          <circle cx="1150" cy="370" r="2" opacity="0.65"/>
+        </g>
+      </svg>
+      <div class="relative reveal max-w-2xl mx-auto text-center">
+        <h2 class="font-serif text-3xl md:text-5xl mb-5">Your story matters here.</h2>
+        <p class="text-canvas/80 text-lg mb-8">
+          Come share, listen, and be part of a community that sees you as more than a role.
+          Whether you're new to Korea or years into this life, there's a place for you here.
+        </p>
+        <a href="#" class="inline-block rounded-full bg-accent text-canvas font-semibold px-8 py-3 hover:brightness-110 transition"><!-- TODO: replace with signup form / Instagram link -->Join the Community</a>
+      </div>
+    </section>
+  </main>
+
+  <!-- ══════════════ FOOTER ══════════════ -->
+  <footer class="border-t border-ink/10 px-5 py-10 text-sm text-muted">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <p class="font-serif text-base text-ink mb-1">More Than Just a Mrs.</p>
+        <p>Seoul, South Korea</p>
+      </div>
+      <div class="space-y-1">
+        <p><!-- TODO: add contact email --> Contact: TODO@example.com</p>
+        <p><!-- TODO: add Instagram/social handle --> Instagram: @TODO</p>
+      </div>
+      <p>© 2026 More Than Just a Mrs.</p>
+    </div>
+  </footer>
+
+  <script>
+    // scroll-reveal
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+    // portal / iris scroll mechanics
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduceMotion) {
+      const progressOf = (wrap) => {
+        const rect = wrap.getBoundingClientRect();
+        const total = wrap.offsetHeight - window.innerHeight;
+        return total > 0 ? Math.min(1, Math.max(0, -rect.top / total)) : 0;
+      };
+
+      // One continuous pinned sequence:
+      //   0-30%   the blossom sunset scene opens — a hole grows from the sun's
+      //           position (not the viewport center) to reveal the hero
+      //   25-55%  floating cards fly out to the sides and fade, like passing through them
+      //   45-65%  hero text fades out
+      //   60-100% the next section, already waiting behind the hero in 3D space,
+      //           zooms forward to fill the screen — so it reads as continuing
+      //           forward through the scene, not scrolling up to a new page
+      const setupIntro = (wrapId, blossomWrapId, blossomCoverId, zoomId, zoomFrom, depthId) => {
+        const wrap = document.getElementById(wrapId);
+        const blossomWrap = document.getElementById(blossomWrapId);
+        const blossomCover = document.getElementById(blossomCoverId);
+        const zoomEl = zoomId ? document.getElementById(zoomId) : null;
+        const cards = document.querySelectorAll('#' + wrapId + ' .tilt-card');
+        const textEl = document.getElementById('heroText');
+        const depthEl = depthId ? document.getElementById(depthId) : null;
+        if (!wrap || !blossomWrap || !blossomCover) return;
+        const holeOriginX = 0.77, holeOriginY = 0.48; // matches the mask's "at 77% 48%" and the image's object-position
+        const computeMaxHole = () => {
+          const w = window.innerWidth, h = window.innerHeight;
+          const ox = w * holeOriginX, oy = h * holeOriginY;
+          const corners = [[0, 0], [w, 0], [0, h], [w, h]];
+          return Math.max(...corners.map(([cx, cy]) => Math.hypot(cx - ox, cy - oy)));
+        };
+        let maxHole = computeMaxHole();
+        let ticking = false;
+        const update = () => {
+          ticking = false;
+          const p = progressOf(wrap);
+          const openP = Math.min(1, p / 0.30);
+          blossomCover.style.setProperty('--hole', (openP * maxHole) + 'px');
+          blossomWrap.style.setProperty('--openP', openP.toFixed(3));
+          if (zoomEl && zoomFrom) zoomEl.style.setProperty('--zoom', (zoomFrom - (zoomFrom - 1) * openP).toFixed(3));
+
+          const exitP = Math.max(0, Math.min(1, (p - 0.25) / 0.30));
+          cards.forEach((c) => c.style.setProperty('--exitP', exitP.toFixed(3)));
+
+          if (textEl) {
+            const textExitP = Math.max(0, Math.min(1, (p - 0.45) / 0.20));
+            textEl.style.opacity = (1 - textExitP).toFixed(3);
+            textEl.style.transform = 'translateY(' + (-24 * textExitP).toFixed(1) + 'px)';
+          }
+
+          if (depthEl) {
+            const nextP = Math.max(0, Math.min(1, (p - 0.60) / 0.40));
+            depthEl.style.setProperty('--z', (-700 * (1 - nextP)).toFixed(1) + 'px');
+            depthEl.style.setProperty('--op', nextP.toFixed(3));
+          }
+        };
+        const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', () => { maxHole = computeMaxHole(); update(); });
+        update();
+      };
+
+      setupIntro('introWrap', 'blossomWrap', 'blossomCover', 'heroZoom', 1.12, 'depthNext');
+    }
+  </script>
+</body>
+</html>
